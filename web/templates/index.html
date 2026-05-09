@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TS API Gateway Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/admin/static/css/dashboard.css">
+</head>
+<body>
+    <div class="glow-bg"></div>
+
+    <header class="app-header">
+        <div class="header-logo">
+            <span class="logo-icon">▲</span>
+            <div class="logo-text">
+                <h1>TS API GATEWAY</h1>
+                <p>API Gateway Control Plane</p>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button id="theme-toggle" title="Toggle Light/Dark Theme" style="background: transparent; border: 1px solid var(--panel-border); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; color: var(--text-primary); transition: all 0.2s ease;">
+                🌓
+            </button>
+            <button id="btn-logout-header" class="btn-secondary hidden" style="padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 1px;">
+                LOGOUT
+            </button>
+            <div class="gateway-status">
+                <span class="pulse-dot green"></span>
+                <span class="status-label">GATEWAY PORT 8080 ONLINE</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Secure Login Screen -->
+    <div id="login-screen" class="login-wrapper">
+        <div class="login-card glass">
+            <div class="login-header">
+                <span class="logo-icon" style="font-size: 32px; color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);">▲</span>
+                <h2>TS API GATEWAY</h2>
+                <p>Control Plane Authentication</p>
+            </div>
+            <form id="login-form" class="register-form">
+                <div id="login-error" class="login-error-msg hidden">
+                    Invalid administrator credentials. Please try again.
+                </div>
+                <div class="form-group">
+                    <label for="login-username">Admin Username</label>
+                    <input type="text" id="login-username" placeholder="e.g. name@example.com" required style="width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Security Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required style="width: 100%;">
+                </div>
+                <button type="submit" class="btn-primary btn-full" style="margin-top: 15px;">Authenticate Session</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Workspace (Initially Hidden) -->
+    <div id="dashboard-screen" class="hidden">
+
+    <main class="dashboard-container">
+        <!-- Stats Section -->
+        <section class="stats-grid">
+            <div class="stats-card glass">
+                <p class="stats-label">Total Requests</p>
+                <h2 id="stat-total-requests" class="stats-value text-indigo">0</h2>
+                <span class="stats-indicator text-green">↑ Realtime</span>
+            </div>
+            <div class="stats-card glass">
+                <p class="stats-label">Active Connections</p>
+                <h2 id="stat-active-conns" class="stats-value text-cyan">0</h2>
+                <span class="stats-indicator text-blue">● Concurrent</span>
+            </div>
+            <div class="stats-card glass">
+                <p class="stats-label">Total Errors</p>
+                <h2 id="stat-total-errors" class="stats-value text-red">0</h2>
+                <span class="stats-indicator" id="stat-error-rate">0.0% Error Rate</span>
+            </div>
+            <div class="stats-card glass">
+                <p class="stats-label">Registered Services</p>
+                <h2 id="stat-total-services" class="stats-value text-purple">0</h2>
+                <span class="stats-indicator" id="stat-active-instances">0 Nodes Active</span>
+            </div>
+        </section>
+
+        <!-- Main Workspace -->
+        <div class="workspace-layout">
+            
+            <!-- Left Side: Register Service & Dev tools -->
+            <aside class="sidebar">
+                <div class="panel glass">
+                    <h3 class="panel-title">Register Microservice</h3>
+                    <form id="register-form" class="register-form">
+                        <div class="form-group">
+                            <label for="service-id">Service ID <span class="required">*</span></label>
+                            <input type="text" id="service-id" placeholder="e.g. auth-service" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="service-name">Service Name <span class="required">*</span></label>
+                            <input type="text" id="service-name" placeholder="e.g. Identity & Access" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="service-prefix">Route Path Prefix <span class="required">*</span></label>
+                                <input type="text" id="service-prefix" placeholder="e.g. /api/auth" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="service-health">Health Endpoint</label>
+                                <input type="text" id="service-health" value="/health" placeholder="/health">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="service-protocol">Protocol</label>
+                                <select id="service-protocol">
+                                    <option value="REST">REST</option>
+                                    <option value="gRPC">gRPC</option>
+                                    <option value="SOAP">SOAP</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="service-tech">Tech Stack</label>
+                                <select id="service-tech">
+                                    <option value="Go">Go</option>
+                                    <option value="Spring Boot">Spring Boot</option>
+                                    <option value="Node.js">Node.js</option>
+                                    <option value="Python">Python</option>
+                                    <option value="C# .NET">C# .NET</option>
+                                    <option value="SOAP-Legacy">SOAP-Legacy</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="service-lb">Load Balancing Policy</label>
+                            <select id="service-lb">
+                                <option value="RoundRobin">Round Robin</option>
+                                <option value="Random">Random</option>
+                                <option value="LeastConnections">Least Connections</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="service-rate-limit">Rate Limit (RPS)</label>
+                                <input type="number" id="service-rate-limit" min="0" value="0" step="any" placeholder="0 = Unlimited">
+                            </div>
+                            <div class="form-group">
+                                <label for="service-rate-burst">Burst Capacity</label>
+                                <input type="number" id="service-rate-burst" min="0" value="0" placeholder="0 = Unlimited">
+                            </div>
+                        </div>
+
+                        <div class="form-group checkbox-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; margin-top: 5px;">
+                            <input type="checkbox" id="service-auth" style="width: auto; cursor: pointer; height: 18px; width: 18px; margin: 0;">
+                            <label for="service-auth" style="margin-bottom: 0; cursor: pointer; user-select: none; font-size: 13px;">Enforce JWT Authentication</label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Service Nodes (URLs) <span class="required">*</span></label>
+                            <div id="instances-container" class="instances-input-list">
+                                <div class="instance-input-row">
+                                    <input type="text" class="instance-url" placeholder="e.g. http://localhost:8081" required>
+                                </div>
+                            </div>
+                            <button type="button" id="btn-add-instance-row" class="btn-secondary">+ Add Instance Node</button>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Provision Service</button>
+                    </form>
+                </div>
+
+                <!-- Sandbox / Token Utility -->
+                <div class="panel glass sandbox-panel">
+                    <h3 class="panel-title">Developer Sandbox</h3>
+                    <p class="panel-desc">Generate secure JWT signatures to test routes configured with authentication.</p>
+                    <button id="btn-generate-token" class="btn-secondary btn-full">Generate JWT Token</button>
+                    <div id="token-display-box" class="token-display hidden">
+                        <textarea id="jwt-token-val" readonly></textarea>
+                        <button id="btn-copy-token" class="btn-primary btn-copy">Copy Signature</button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Right Side: Service Grid and Live Logs -->
+            <section class="content-area">
+                <div class="panel glass">
+                    <h3 class="panel-title">Active Services Registry</h3>
+                    <div id="services-grid" class="services-grid">
+                        <div class="loading-state">Scanning gateway service catalog...</div>
+                    </div>
+                </div>
+
+                <!-- Live Stream Console -->
+                <div class="panel glass terminal-panel">
+                    <div class="terminal-header">
+                        <div class="terminal-actions">
+                            <span class="terminal-dot red"></span>
+                            <span class="terminal-dot yellow"></span>
+                            <span class="terminal-dot green"></span>
+                            <span class="terminal-title">GATEWAY STDOUT STREAM</span>
+                        </div>
+                        <div class="terminal-controls">
+                            <label class="toggle-control">
+                                <input type="checkbox" id="auto-scroll-check" checked>
+                                <span class="control-label">Auto-Scroll</span>
+                            </label>
+                            <button id="btn-clear-logs" class="btn-terminal-action">Clear</button>
+                        </div>
+                    </div>
+                    <div id="terminal-body" class="terminal-body">
+                        <div class="terminal-line system-line">[SYSTEM] Console pipeline initialized. Listening for ingress HTTP/gRPC/SOAP packet transfers...</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+ 
+     <footer class="app-footer">
+         <p>&copy; 2026 TS API Gateway. Crafted with pure Go lang, High performance multiplexing proxy.</p>
+     </footer>
+     </div> <!-- Close #dashboard-screen -->
+ 
+     <script src="/admin/static/js/dashboard.js"></script>
+ </body>
+ </html>
