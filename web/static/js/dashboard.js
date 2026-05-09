@@ -350,24 +350,93 @@ document.addEventListener('DOMContentLoaded', () => {
     function appendTransactionLog(log) {
         const line = document.createElement('div');
         line.className = 'terminal-line';
+        line.style.padding = '8px 12px';
+        line.style.borderBottom = '1px solid rgba(255, 255, 255, 0.04)';
+        line.style.display = 'flex';
+        line.style.alignItems = 'center';
+        line.style.gap = '10px';
+        line.style.flexWrap = 'wrap';
 
         const timeStr = formatTime(new Date(log.timestamp));
-        const methodClass = getMethodClass(log.method);
-        const statusClass = getStatusClass(log.status);
+        
+        // Method badge colors
+        let methodColor = 'var(--neon-cyan)';
+        let methodBg = 'rgba(8, 145, 178, 0.15)';
+        if (log.method === 'POST') {
+            methodColor = '#10b981'; // Green
+            methodBg = 'rgba(16, 185, 129, 0.15)';
+        } else if (log.method === 'DELETE') {
+            methodColor = '#ef4444'; // Red
+            methodBg = 'rgba(239, 68, 68, 0.15)';
+        } else if (log.method === 'PUT' || log.method === 'PATCH') {
+            methodColor = '#f59e0b'; // Amber
+            methodBg = 'rgba(245, 158, 11, 0.15)';
+        }
+
+        // Status badge styling
+        let statusColor = '#10b981'; // 2xx Green
+        let statusBg = 'rgba(16, 185, 129, 0.15)';
+        let statusText = `${log.status} OK`;
+        let statusIcon = '✓';
+        let extraTag = '<span style="color: #10b981; font-weight: 500; font-size: 11px; margin-left: auto;">[Routed ➜ Forwarded]</span>';
+
+        if (log.status >= 300 && log.status < 400) {
+            statusColor = '#3b82f6'; // Blue
+            statusBg = 'rgba(59, 130, 246, 0.15)';
+            statusText = `${log.status} REDIRECT`;
+            statusIcon = '➜';
+        } else if (log.status >= 400 && log.status < 500) {
+            statusColor = '#f59e0b'; // Amber
+            statusBg = 'rgba(245, 158, 11, 0.15)';
+            statusIcon = '⚠';
+            if (log.status === 401) {
+                statusText = '401 UNAUTHORIZED';
+                extraTag = '<span style="color: #ef4444; font-weight: 600; font-size: 11px; text-shadow: 0 0 8px rgba(239, 68, 68, 0.3); margin-left: auto;">🛑 [BLOCKED: MISSING AUTH]</span>';
+            } else if (log.status === 429) {
+                statusText = '429 TOO MANY REQS';
+                extraTag = '<span style="color: #f59e0b; font-weight: 600; font-size: 11px; text-shadow: 0 0 8px rgba(245, 158, 11, 0.3); margin-left: auto;">⚡ [BLOCKED: RATE LIMITED]</span>';
+            } else if (log.status === 404) {
+                statusText = '404 NOT FOUND';
+                extraTag = '<span style="color: #f59e0b; font-weight: 500; font-size: 11px; margin-left: auto;">✕ [ROUTE UNMATCHED]</span>';
+            } else {
+                statusText = `${log.status} CLIENT ERROR`;
+            }
+        } else if (log.status >= 500) {
+            statusColor = '#ef4444'; // Red
+            statusBg = 'rgba(239, 68, 68, 0.2)';
+            statusText = `${log.status} GATEWAY FAIL`;
+            statusIcon = '🔥';
+            extraTag = '<span style="color: #ef4444; font-weight: 600; font-size: 11px; margin-left: auto;">🔥 [FORWARDING FAILED]</span>';
+        }
+
+        // Parse latency to highlight slow requests
+        let latencyColor = '#10b981'; // Green
+        if (log.latency.includes('s') && !log.latency.includes('ms')) {
+            latencyColor = '#ef4444'; // slow > 1s
+        } else {
+            const val = parseFloat(log.latency);
+            if (!isNaN(val) && val > 250.0) {
+                latencyColor = '#f59e0b'; // medium slow > 250ms
+            }
+        }
 
         line.innerHTML = `
-            <span class="log-timestamp">[${timeStr}]</span>
-            <span class="log-ip">${escapeHTML(log.ip)}</span>
-            <span class="log-method ${methodClass}">${escapeHTML(log.method)}</span>
-            <span class="log-path">${escapeHTML(log.path)}</span>
-            <span class="log-status ${statusClass}">${log.status}</span>
-            <span class="log-latency">(${log.latency})</span>
+            <span style="color: #64748b; font-family: monospace; font-size: 11px;">[${timeStr}]</span>
+            <span style="color: #94a3b8; font-size: 12px; font-weight: 500;">${escapeHTML(log.ip)}</span>
+            <span style="color: ${methodColor}; background: ${methodBg}; padding: 2px 8px; border-radius: 4px; font-family: 'Fira Code', monospace; font-weight: 600; font-size: 11px; min-width: 50px; text-align: center;">${escapeHTML(log.method)}</span>
+            <span style="color: #f1f5f9; font-family: 'Fira Code', monospace; font-size: 12px;">${escapeHTML(log.path)}</span>
+            <span style="color: #64748b; font-size: 12px; font-weight: 500;">➜</span>
+            <span style="color: ${statusColor}; background: ${statusBg}; padding: 2px 8px; border-radius: 4px; font-family: 'Fira Code', monospace; font-weight: 600; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+                <span>${statusIcon}</span> <span>${statusText}</span>
+            </span>
+            <span style="color: ${latencyColor}; font-size: 11px; font-weight: 600;">(${log.latency})</span>
+            ${extraTag}
         `;
 
         terminalBody.appendChild(line);
 
-        // Limit DOM size to last 60 lines
-        while (terminalBody.childElementCount > 60) {
+        // Limit DOM size to last 100 lines for performance
+        while (terminalBody.childElementCount > 100) {
             terminalBody.removeChild(terminalBody.firstChild);
         }
     }
