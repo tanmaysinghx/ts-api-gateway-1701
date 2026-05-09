@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: ts-api-gateway-1701
     ports:
-      - "8080:8080"
+      - "1701:8080"
     command: ["-mock"] # Starts sandbox mock endpoints automatically for metrics generation
     volumes:
       - ./services.json:/app/services.json # Persists microservices across restarts
