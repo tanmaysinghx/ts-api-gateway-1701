@@ -1,0 +1,16 @@
+/* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
+
+@theme {
+  --color-dark-bg: #0f172a;
+  --color-glass: rgba(255, 255, 255, 0.03);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #0b0f19; /* Dark premium background color */
+  color: #f1f5f9;
+  overflow-x: hidden;
+}
